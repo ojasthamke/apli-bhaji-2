@@ -35,22 +35,25 @@ export default function CreateOrder() {
         return () => clearTimeout(timer);
     }, []);
 
-    const { totalMrp, totalPrice } = useMemo(() => {
+    const { totalMrp, totalPrice, totalCost } = useMemo(() => {
         let tMrp = 0;
         let tPrice = 0;
-        if (!availableItems) return { totalMrp: 0, totalPrice: 0 };
+        let tCost = 0;
+        if (!availableItems) return { totalMrp: 0, totalPrice: 0, totalCost: 0 };
         availableItems.forEach(item => {
             const q = parseFloat(quantities[item.id!] || '0');
             if (q > 0) {
                 tMrp += q * item.mrp;
                 tPrice += q * item.price;
+                tCost += q * (item.costPrice || 0);
             }
         });
-        return { totalMrp: tMrp, totalPrice: tPrice };
+        return { totalMrp: tMrp, totalPrice: tPrice, totalCost: tCost };
     }, [availableItems, quantities]);
 
     const discNum = parseFloat(discount || '0');
     const finalAmount = Math.max(0, totalPrice - discNum);
+    const orderProfit = finalAmount - totalCost;
 
     const handleSave = async () => {
         if (!availableItems) return;
@@ -70,6 +73,7 @@ export default function CreateOrder() {
                     totalAmount: totalPrice,
                     discount: discNum,
                     finalAmount,
+                    profit: orderProfit,
                     status: status,
                     dateTime: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
@@ -80,13 +84,17 @@ export default function CreateOrder() {
                 for (const item of selected) {
                     const q = parseFloat(quantities[item.id!] || '0');
                     const total = q * item.price;
+                    const itemProfit = total - (q * (item.costPrice || 0)) - (discNum * (total / totalPrice)); // Disperse overall discount proportionally if wanted, or just calculate item profit loosely
+
                     const orderItemObj = {
                         orderId: orderId as number,
                         itemId: item.id!,
                         quantity: q,
                         price: item.price,
                         mrp: item.mrp,
-                        total
+                        costPrice: item.costPrice || 0,
+                        total,
+                        profit: itemProfit
                     };
                     await db.orderItems.add(orderItemObj);
                     orderItemsList.push({ ...orderItemObj, name: item.name, unit: item.unit });

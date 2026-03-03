@@ -6,6 +6,7 @@ export default function ItemsManagement() {
     const [name, setName] = useState('');
     const [mrp, setMrp] = useState('');
     const [price, setPrice] = useState('');
+    const [costPrice, setCostPrice] = useState('');
     const [unit, setUnit] = useState('kg');
     const [category, setCategory] = useState<'Vegetable' | 'Medicine'>('Vegetable');
 
@@ -16,9 +17,9 @@ export default function ItemsManagement() {
     const handleSave = async () => {
         if (!name.trim() || !mrp || !price) return;
         await db.items.add({
-            name, mrp: Number(mrp), price: Number(price), unit, category, isEnabled: 1, createdAt: new Date().toISOString()
+            name, mrp: Number(mrp), price: Number(price), costPrice: Number(costPrice || 0), unit, category, isEnabled: 1, createdAt: new Date().toISOString()
         });
-        setName(''); setMrp(''); setPrice('');
+        setName(''); setMrp(''); setPrice(''); setCostPrice('');
     };
 
     const toggleEnable = async (id: number, currentStatus: number) => {
@@ -33,6 +34,7 @@ export default function ItemsManagement() {
                 <h2 className="text-lg font-bold">Add New Item</h2>
                 <div className="grid grid-cols-2 gap-4">
                     <input type="text" placeholder="Name" className="input-field col-span-2" value={name} onChange={e => setName(e.target.value)} />
+                    <input type="number" placeholder="Cost Price" className="input-field" value={costPrice} onChange={e => setCostPrice(e.target.value)} />
                     <input type="number" placeholder="MRP" className="input-field" value={mrp} onChange={e => setMrp(e.target.value)} />
                     <input type="number" placeholder="Sell Price" className="input-field" value={price} onChange={e => setPrice(e.target.value)} />
                     <select className="input-field" value={category} onChange={e => setCategory(e.target.value as any)}>

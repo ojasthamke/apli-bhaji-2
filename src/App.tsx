@@ -9,6 +9,7 @@ import AddArea from './pages/AddArea';
 import AddCustomer from './pages/AddCustomer';
 import Header from './components/Header';
 import OrderDetail from './pages/OrderDetail';
+import Expenses from './pages/Expenses';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/orders/:orderId" element={<OrderDetail />} />
             <Route path="/items" element={<ItemsManagement />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/expenses" element={<Expenses />} />
           </Routes>
         </main>
 
@@ -37,6 +39,10 @@ function App() {
           <a href="/items" className="text-gray-400 hover:text-[#10b981] flex flex-col items-center">
             <span className="text-xl">📦</span>
             <span className="text-xs mt-1">Items</span>
+          </a>
+          <a href="/expenses" className="text-gray-400 hover:text-[#10b981] flex flex-col items-center">
+            <span className="text-xl">💸</span>
+            <span className="text-xs mt-1">Expenses</span>
           </a>
           <a href="/reports" className="text-gray-400 hover:text-[#10b981] flex flex-col items-center">
             <span className="text-xl">📊</span>

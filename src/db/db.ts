@@ -28,6 +28,7 @@ export interface Item {
     category: 'Vegetable' | 'Medicine';
     price: number;
     mrp: number;
+    costPrice?: number;
     unit: string;
     isEnabled: number; // 0 or 1
     createdAt: string;
@@ -39,6 +40,7 @@ export interface Order {
     totalAmount: number;
     discount: number;
     finalAmount: number;
+    profit?: number;
     status: 'Pending' | 'Delivered' | 'Cancelled';
     dateTime: string;
     updatedAt: string;
@@ -51,7 +53,9 @@ export interface OrderItem {
     quantity: number;
     price: number;
     mrp: number;
+    costPrice?: number;
     total: number;
+    profit?: number;
 }
 
 export class AppDB extends Dexie {
