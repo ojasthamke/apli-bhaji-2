@@ -49,10 +49,19 @@ export default function AreaCustomers() {
                     <div
                         key={c.id}
                         onClick={() => navigate(`/customers/${c.id}`)}
-                        className="card p-4 cursor-pointer hover:bg-[#222]"
+                        className="card p-4 cursor-pointer hover:bg-[#222] flex gap-4 items-center"
                     >
-                        <h2 className="text-xl font-semibold">{c.name}</h2>
-                        <p className="text-gray-400">{c.phone}</p>
+                        {c.photoPath ? (
+                            <img src={c.photoPath} alt={c.name} className="w-12 h-12 rounded-full object-cover border border-[#333]" />
+                        ) : (
+                            <div className="w-12 h-12 rounded-full bg-[#333] flex items-center justify-center text-xl text-gray-400">
+                                {c.name.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        <div>
+                            <h2 className="text-xl font-semibold">{c.name}</h2>
+                            <p className="text-gray-400">{c.phone}</p>
+                        </div>
                     </div>
                 ))}
                 {filtered?.length === 0 && (

@@ -8,6 +8,7 @@ import Reports from './pages/Reports';
 import AddArea from './pages/AddArea';
 import AddCustomer from './pages/AddCustomer';
 import Header from './components/Header';
+import OrderDetail from './pages/OrderDetail';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Route path="/areas/:areaId/customers/add" element={<AddCustomer />} />
             <Route path="/customers/:customerId" element={<CustomerDetail />} />
             <Route path="/customers/:customerId/order" element={<CreateOrder />} />
+            <Route path="/orders/:orderId" element={<OrderDetail />} />
             <Route path="/items" element={<ItemsManagement />} />
             <Route path="/reports" element={<Reports />} />
           </Routes>

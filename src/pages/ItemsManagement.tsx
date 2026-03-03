@@ -11,6 +11,8 @@ export default function ItemsManagement() {
 
     const items = useLiveQuery(() => db.items.toArray());
 
+    const enableMedicine = localStorage.getItem('enableMedicine') !== 'false';
+
     const handleSave = async () => {
         if (!name.trim() || !mrp || !price) return;
         await db.items.add({
@@ -35,7 +37,7 @@ export default function ItemsManagement() {
                     <input type="number" placeholder="Sell Price" className="input-field" value={price} onChange={e => setPrice(e.target.value)} />
                     <select className="input-field" value={category} onChange={e => setCategory(e.target.value as any)}>
                         <option>Vegetable</option>
-                        <option>Medicine</option>
+                        {enableMedicine && <option>Medicine</option>}
                     </select>
                     <select className="input-field" value={unit} onChange={e => setUnit(e.target.value)}>
                         <option value="kg">kg</option>
@@ -49,7 +51,7 @@ export default function ItemsManagement() {
 
             <h2 className="text-lg font-bold mb-4">Item List</h2>
             <div className="space-y-4">
-                {items?.map(item => (
+                {items?.filter(i => enableMedicine || i.category !== 'Medicine').map(item => (
                     <div key={item.id} className="card p-4 flex justify-between items-center opacity-100">
                         <div>
                             <div className="flex items-center gap-2">

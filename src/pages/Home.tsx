@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +8,11 @@ import { FaTrash } from 'react-icons/fa';
 export default function Home() {
     const navigate = useNavigate();
     const areas = useLiveQuery(() => db.areas.toArray());
+    const [search, setSearch] = useState('');
+
+    const filteredAreas = areas?.filter(a =>
+        a.name.toLowerCase().includes(search.toLowerCase())
+    );
 
     const handleDeleteArea = async (areaId: number, areaName: string, e: any) => {
         e.stopPropagation();
@@ -49,16 +55,31 @@ export default function Home() {
                 </button>
             </div>
 
+            <input
+                type="text"
+                placeholder="Search areas..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="input-field mb-4 w-full"
+            />
+
             <div className="grid gap-4">
-                {areas?.map(area => (
+                {filteredAreas?.map(area => (
                     <div
                         key={area.id}
                         onClick={() => navigate(`/areas/${area.id}/customers`)}
                         className="card p-4 flex justify-between items-center cursor-pointer hover:bg-[#222]"
                     >
-                        <div>
-                            <h2 className="text-xl font-semibold">{area.name}</h2>
-                            <p className="text-sm text-gray-400">Created: {new Date(area.createdAt).toLocaleDateString()}</p>
+                        <div className="flex gap-4 items-center">
+                            {area.photoPath ? (
+                                <img src={area.photoPath} alt="Area" className="w-12 h-12 rounded-full object-cover border border-[#333]" />
+                            ) : (
+                                <div className="w-12 h-12 rounded-full bg-[#333] flex items-center justify-center text-xl">🏙️</div>
+                            )}
+                            <div>
+                                <h2 className="text-xl font-semibold">{area.name}</h2>
+                                <p className="text-sm text-gray-400">Created: {new Date(area.createdAt).toLocaleDateString()}</p>
+                            </div>
                         </div>
                         <div className="flex items-center gap-4">
                             <button
@@ -71,7 +92,7 @@ export default function Home() {
                         </div>
                     </div>
                 ))}
-                {areas?.length === 0 && (
+                {filteredAreas?.length === 0 && (
                     <div className="text-center text-gray-500 mt-10">
                         No areas found. Add your first area!
                     </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { db } from '../db/db';
 import Swal from 'sweetalert2';
+import { fileToBase64 } from '../utils/imageConverter';
 
 export default function AddCustomer() {
     const { areaId } = useParams();
@@ -12,6 +13,14 @@ export default function AddCustomer() {
     const [houseNumber, setHouseNumber] = useState('');
     const [locationLink, setLocationLink] = useState('');
     const [notes, setNotes] = useState('');
+    const [photoPath, setPhotoPath] = useState('');
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const base64 = await fileToBase64(e.target.files[0]);
+            setPhotoPath(base64);
+        }
+    };
 
     const handleSave = async () => {
         if (!name.trim() || !phone.trim() || !areaId) {
@@ -25,6 +34,7 @@ export default function AddCustomer() {
             address,
             houseNumber,
             locationLink,
+            photoPath,
             notes,
             areaId: Number(areaId),
             createdAt: new Date().toISOString()
@@ -99,6 +109,17 @@ export default function AddCustomer() {
                         className="input-field h-24"
                         placeholder="Delivery preferences..."
                     />
+                </div>
+
+                <div>
+                    <label className="block text-sm text-gray-400 mb-2">Customer Photo</label>
+                    <div className="flex items-center gap-4">
+                        {photoPath && <img src={photoPath} alt="Customer" className="w-16 h-16 rounded object-cover" />}
+                        <label className="btn-primary w-full cursor-pointer bg-[#333] hover:bg-[#444] text-white">
+                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            📷 Choose Photo
+                        </label>
+                    </div>
                 </div>
 
                 <button

@@ -2,9 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useNavigate, useParams } from 'react-router-dom';
-import { jsPDF } from "jspdf";
-import autoTable from 'jspdf-autotable';
 import Swal from 'sweetalert2';
+import { generatePDFAndShare } from '../utils/pdfGenerator';
 
 export default function CreateOrder() {
     const { customerId } = useParams();
@@ -17,7 +16,15 @@ export default function CreateOrder() {
         if (!customer?.areaId) return undefined;
         return db.areas.get(Number(customer.areaId));
     }, [customer]);
-    const availableItems = useLiveQuery(() => db.items.where('isEnabled').equals(1).toArray());
+
+    const enableMedicine = localStorage.getItem('enableMedicine') !== 'false';
+    const availableItems = useLiveQuery(async () => {
+        const items = await db.items.where('isEnabled').equals(1).toArray();
+        if (!enableMedicine) {
+            return items.filter(i => i.category !== 'Medicine');
+        }
+        return items;
+    });
 
     const [quantities, setQuantities] = useState<Record<number, string>>({});
     const [discount, setDiscount] = useState<string>('0');
@@ -45,70 +52,6 @@ export default function CreateOrder() {
     const discNum = parseFloat(discount || '0');
     const finalAmount = Math.max(0, totalPrice - discNum);
 
-    const generatePDFAndShare = async (orderItems: any[], orderId: number, orderTotal: number, customerName: string) => {
-        const doc = new jsPDF();
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(22);
-        doc.text("APLI BHAJI", 14, 20);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-
-        doc.text(`Customer: ${customerName}`, 14, 30);
-        if (customer?.phone) doc.text(`Phone: ${customer.phone}`, 14, 35);
-        if (area?.name) doc.text(`Area: ${area.name}`, 14, 40);
-        doc.text(`Date: ${new Date().toLocaleString()}`, 14, 45);
-
-        const tableData = orderItems.map((item, i) => [
-            i + 1,
-            item.name,
-            `${item.quantity} ${item.unit}`,
-            item.price.toFixed(2),
-            item.total.toFixed(2)
-        ]);
-
-        autoTable(doc, {
-            startY: 55,
-            head: [['#', 'Item', 'Qty', 'Price', 'Total']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [16, 185, 129] }
-        });
-
-        const finalY = (doc as any).lastAutoTable.finalY || 55;
-
-        doc.setFont("helvetica", "bold");
-        doc.text(`Total MRP Amount: Rs ${totalMrp.toFixed(2)}`, 130, finalY + 10);
-        doc.text(`Selling Total: Rs ${totalPrice.toFixed(2)}`, 130, finalY + 20);
-        doc.text(`Discount: Rs ${discNum.toFixed(2)}`, 130, finalY + 30);
-
-        doc.setFontSize(14);
-        doc.text(`FINAL AMOUNT: Rs ${orderTotal.toFixed(2)}`, 130, finalY + 45);
-
-        const pdfBlob = doc.output('blob');
-        const fileName = `Invoice_${customerName}_${orderId}.pdf`;
-
-        try {
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], fileName, { type: 'application/pdf' })] })) {
-                const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-                await navigator.share({
-                    title: 'Apli Bhaji Invoice',
-                    text: `Hello ${customerName}, here is your latest invoice from APLI BHAJI. Total: Rs ${orderTotal.toFixed(2)}.`,
-                    files: [file]
-                });
-            } else {
-                // Fallback to download and copy WA link
-                doc.save(fileName);
-                const waLink = `https://wa.me/${customer?.phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${customerName}, your order total is Rs ${orderTotal.toFixed(2)}. I have sent the invoice PDF here.`)}`;
-                setTimeout(() => {
-                    window.open(waLink, '_blank');
-                }, 1000);
-            }
-        } catch (e) {
-            console.log("Sharing failed or cancelled", e);
-            doc.save(fileName);
-        }
-    };
-
     const handleSave = async () => {
         if (!availableItems) return;
         const selected = availableItems.filter(i => parseFloat(quantities[i.id!] || '0') > 0);
@@ -116,6 +59,9 @@ export default function CreateOrder() {
             Swal.fire({ title: 'Error', text: 'Please select at least one item.', icon: 'error', background: '#222', color: '#fff' });
             return;
         }
+
+        let finalOrderId = 0;
+        let finalOrderItemsList: any[] = [];
 
         try {
             await db.transaction('rw', db.orders, db.orderItems, async () => {
@@ -135,7 +81,7 @@ export default function CreateOrder() {
                     const q = parseFloat(quantities[item.id!] || '0');
                     const total = q * item.price;
                     const orderItemObj = {
-                        orderId,
+                        orderId: orderId as number,
                         itemId: item.id!,
                         quantity: q,
                         price: item.price,
@@ -146,17 +92,20 @@ export default function CreateOrder() {
                     orderItemsList.push({ ...orderItemObj, name: item.name, unit: item.unit });
                 }
 
-                Swal.fire({ title: 'Success', text: 'Order saved successfully!', icon: 'success', background: '#222', color: '#fff', timer: 1500, showConfirmButton: false });
-
-                // Generate PDF Document
-                await generatePDFAndShare(orderItemsList, orderId as number, finalAmount, customer?.name || "Unknown");
-
-                navigate(-1);
+                finalOrderId = orderId as number;
+                finalOrderItemsList = orderItemsList;
             });
         } catch (e) {
             console.error(e);
             Swal.fire({ title: 'Error', text: 'Failed to save order.', icon: 'error', background: '#222', color: '#fff' });
+            return;
         }
+
+        Swal.fire({ title: 'Success', text: 'Order saved successfully!', icon: 'success', background: '#222', color: '#fff', timer: 1500, showConfirmButton: false });
+
+        await generatePDFAndShare(finalOrderItemsList, finalOrderId, finalAmount, customer?.name || "Unknown", customer?.phone, area?.name, totalMrp, discNum);
+
+        navigate(-1);
     };
 
     if (isLoading) return <div className="p-4 text-center text-gray-500">Loading Order Settings...</div>;
