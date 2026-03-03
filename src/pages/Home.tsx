@@ -154,7 +154,7 @@ export default function Home() {
                 {filteredAreas?.map(area => (
                     <div
                         key={area.id}
-                        onClick={() => navigate(`/areas/${area.id}/customers`)}
+                        onClick={() => navigate(`/areas/${area.id}/streets`)}
                         className="card p-4 flex justify-between items-center cursor-pointer hover:bg-[#222]"
                     >
                         <div className="flex gap-4 items-center">

@@ -30,7 +30,7 @@ export default function GlobalSearch() {
         // Search Areas
         areas?.forEach(a => {
             if (a.name.toLowerCase().includes(term)) {
-                matches.push({ type: 'Area', title: a.name, subtitle: '', link: `/areas/${a.id}/customers` });
+                matches.push({ type: 'Area', title: a.name, subtitle: '', link: `/areas/${a.id}/streets` });
             }
         });
 
