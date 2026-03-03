@@ -52,7 +52,7 @@ export const generatePDFAndShare = async (orderItems: any[], orderId: number, or
                 <div class="flex flex-col gap-3 mt-4">
                     <button id="btn-wa" class="btn-primary w-full bg-[#25D366] text-white border-none py-3 flex items-center justify-center font-bold">WhatsApp Direct</button>
                     <button id="btn-group" class="btn-primary w-full bg-[#128C7E] text-white border-none py-3 flex items-center justify-center font-bold">WhatsApp Group + Link</button>
-                    <button id="btn-tg" class="btn-primary w-full bg-[#0088cc] text-white border-none py-3 flex items-center justify-center font-bold">Telegram Share</button>
+                    <button id="btn-tg" class="btn-primary w-full bg-[#0088cc] text-white border-none py-3 flex items-center justify-center font-bold">Telegram Group + Link</button>
                     <button id="btn-dl" class="btn-primary w-full bg-[#333] text-white border-none py-3 flex items-center justify-center font-bold">Download PDF Only</button>
                 </div>
             `,
@@ -89,6 +89,7 @@ export const generatePDFAndShare = async (orderItems: any[], orderId: number, or
     textInvoice += `\n*FINAL AMOUNT: Rs ${orderTotal.toFixed(2)}*\n\n`;
 
     const groupLink = `https://chat.whatsapp.com/DAaIl8d4ObQ2UyBi64Q4qz?mode=gi_t`;
+    const tgGroupLink = `https://t.me/+F5e9iIc9o9I2NGFl`;
     const phoneStr = customerPhone?.replace(/\D/g, '') || '';
     let waPhoneStr = phoneStr;
     if (waPhoneStr.length === 10) waPhoneStr = '91' + waPhoneStr;
@@ -103,8 +104,9 @@ export const generatePDFAndShare = async (orderItems: any[], orderId: number, or
         const waLink = `https://wa.me/${waPhoneStr}?text=${encodeURIComponent(textWithGroup)}`;
         window.open(waLink, '_blank');
     } else if (choice === 'tg') {
-        // Telegram text rendering
-        const tgLink = `https://t.me/share/url?url=${encodeURIComponent(groupLink)}&text=${encodeURIComponent(textInvoice)}`;
+        // Telegram text rendering + Group Link
+        const textWithGroupTg = textInvoice + `*Join our Telegram Group:*\n${tgGroupLink}`;
+        const tgLink = `https://t.me/share/url?url=${encodeURIComponent(tgGroupLink)}&text=${encodeURIComponent(textWithGroupTg)}`;
         window.open(tgLink, '_blank');
     } else if (choice === 'dl') {
         doc.save(fileName);
