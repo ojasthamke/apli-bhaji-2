@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { fileToBase64 } from '../utils/imageConverter';
 
 export default function AddCustomer() {
-    const { areaId } = useParams();
+    const { streetId } = useParams();
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -23,8 +23,14 @@ export default function AddCustomer() {
     };
 
     const handleSave = async () => {
-        if (!name.trim() || !phone.trim() || !areaId) {
+        if (!name.trim() || !phone.trim() || !streetId) {
             Swal.fire({ title: 'Validation Error', text: 'Name and Phone are mandatory', icon: 'error', background: '#222', color: '#fff' });
+            return;
+        }
+
+        const street = await db.streets.get(Number(streetId));
+        if (!street) {
+            Swal.fire({ title: 'Error', text: 'Street not found', icon: 'error', background: '#222', color: '#fff' });
             return;
         }
 
@@ -36,7 +42,8 @@ export default function AddCustomer() {
             locationLink,
             photoPath,
             notes,
-            areaId: Number(areaId),
+            streetId: Number(streetId),
+            areaId: street.areaId,
             createdAt: new Date().toISOString()
         });
 

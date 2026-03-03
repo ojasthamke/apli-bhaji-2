@@ -3,15 +3,16 @@ import { db } from '../db/db';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 
-export default function AreaCustomers() {
-    const { areaId } = useParams();
+export default function StreetCustomers() {
+    const { streetId } = useParams();
     const navigate = useNavigate();
-    const area = useLiveQuery(() => db.areas.get(Number(areaId)));
+    const street = useLiveQuery(() => db.streets.get(Number(streetId)));
+    const area = useLiveQuery(() => street ? db.areas.get(street.areaId) : undefined, [street]);
     const [search, setSearch] = useState('');
 
     const customers = useLiveQuery(
-        () => db.customers.where('areaId').equals(Number(areaId)).toArray(),
-        [areaId]
+        () => db.customers.where({ streetId: Number(streetId) }).toArray(),
+        [streetId]
     );
 
     const filtered = customers?.filter(c =>
@@ -19,17 +20,20 @@ export default function AreaCustomers() {
         c.phone.includes(search)
     );
 
-    if (!area) return <div>Loading...</div>;
+    if (!street || !area) return <div>Loading...</div>;
 
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
                 <div className="flex gap-4 items-center">
-                    <button className="text-gray-400 text-xl" onClick={() => navigate('/')}>←</button>
-                    <h1 className="text-2xl font-bold">{area.name}</h1>
+                    <button className="text-gray-400 text-xl" onClick={() => navigate(`/areas/${street.areaId}/streets`)}>←</button>
+                    <div>
+                        <h1 className="text-2xl font-bold">{street.name}</h1>
+                        <p className="text-xs text-emerald-500">{area.name}</p>
+                    </div>
                 </div>
                 <button
-                    onClick={() => navigate(`/areas/${areaId}/customers/add`)}
+                    onClick={() => navigate(`/streets/${streetId}/customers/add`)}
                     className="btn-primary text-sm px-4 py-2"
                 >
                     + Add
