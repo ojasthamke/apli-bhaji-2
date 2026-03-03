@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">APLI BHAJI</string>
+    <string name="title_activity_main">APLI BHAJI</string>
+    <string name="package_name">com.aplibhaji.app</string>
+    <string name="custom_url_scheme">com.aplibhaji.app</string>
+</resources>
