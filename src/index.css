@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-accent: #10b981;
+  --color-dark-bg: #0F0F0F;
+  --color-dark-card: #1A1A1A;
+}
+
+body {
+  background-color: var(--color-dark-bg) !important;
+  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.card {
+  background-color: var(--color-dark-card);
+  border-radius: 12px;
+}
+
+.btn-primary {
+  background-color: var(--color-primary-accent);
+  color: white;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-primary:active {
+  transform: scale(0.98);
+}
+.input-field {
+  background-color: #222;
+  border: 1px solid #333;
+  color: white;
+  border-radius: 12px;
+  padding: 14px;
+  width: 100%;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-primary-accent);
+}
