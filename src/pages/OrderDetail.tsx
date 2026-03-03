@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useNavigate, useParams } from 'react-router-dom';
 import { generatePDFAndShare } from '../utils/pdfGenerator';
+import Swal from 'sweetalert2';
 
 export default function OrderDetail() {
     const { orderId } = useParams();
@@ -41,6 +42,29 @@ export default function OrderDetail() {
             customer.address,
             customer.locationLink
         );
+    };
+
+    const handleDeleteOrder = async () => {
+        const res = await Swal.fire({
+            title: 'Delete this Order?',
+            text: 'This action cannot be undone. All linked items and profits will be reversed.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            confirmButtonColor: '#d33',
+            background: '#222',
+            color: '#fff'
+        });
+
+        if (res.isConfirmed) {
+            await db.transaction('rw', db.orders, db.orderItems, async () => {
+                await db.orders.delete(Number(orderId));
+                const itemsToDelete = await db.orderItems.where('orderId').equals(Number(orderId)).primaryKeys();
+                await db.orderItems.bulkDelete(itemsToDelete);
+            });
+            Swal.fire({ title: 'Deleted', text: 'Order has been removed.', icon: 'success', timer: 1200, showConfirmButton: false, background: '#222', color: '#fff' });
+            navigate(-1);
+        }
     };
 
     return (
@@ -89,12 +113,20 @@ export default function OrderDetail() {
                 </div>
             </div>
 
-            <button
-                onClick={handleGenerateInvoice}
-                className="btn-primary w-full py-4 text-lg bg-[#25D366] text-white shadow-[0_0_15px_rgba(37,211,102,0.4)] border-none flex justify-center items-center gap-2"
-            >
-                📄 Get Invoice / Share
-            </button>
+            <div className="flex gap-4">
+                <button
+                    onClick={handleGenerateInvoice}
+                    className="flex-1 py-4 text-lg bg-[#25D366] text-white rounded font-bold shadow-[0_0_15px_rgba(37,211,102,0.4)] border-none flex justify-center items-center gap-2 transition hover:bg-[#20bd5a]"
+                >
+                    📄 Share
+                </button>
+                <button
+                    onClick={handleDeleteOrder}
+                    className="flex-1 py-4 text-lg bg-red-600 text-white rounded font-bold shadow-[0_0_15px_rgba(220,38,38,0.4)] border-none flex justify-center items-center gap-2 transition hover:bg-red-700"
+                >
+                    🗑️ Delete Order
+                </button>
+            </div>
         </div>
     );
 }
