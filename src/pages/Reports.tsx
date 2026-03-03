@@ -3,11 +3,10 @@ import { db } from '../db/db';
 
 export default function Reports() {
     const orders = useLiveQuery(() => db.orders.toArray());
-
     const customers = useLiveQuery(() => db.customers.count());
 
     // Aggregate Data
-    const totalEarnings = orders?.reduce((acc, order) => acc + order.finalAmount, 0) || 0;
+    const totalEarnings = orders?.filter(o => o.status !== 'Cancelled').reduce((acc, order) => acc + order.finalAmount, 0) || 0;
     const pendingOrders = orders?.filter(o => o.status === 'Pending').length || 0;
 
     const handleBackup = async () => {
@@ -33,8 +32,39 @@ export default function Reports() {
         }
     };
 
+    const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = JSON.parse(event.target?.result as string);
+                if (data.schemaVersion) {
+                    await db.transaction('rw', [db.areas, db.customers, db.items, db.orders, db.orderItems], async () => {
+                        await db.areas.clear();
+                        if (data.areas) await db.areas.bulkAdd(data.areas);
+                        await db.customers.clear();
+                        if (data.customers) await db.customers.bulkAdd(data.customers);
+                        await db.items.clear();
+                        if (data.items) await db.items.bulkAdd(data.items);
+                        await db.orders.clear();
+                        if (data.orders) await db.orders.bulkAdd(data.orders);
+                        await db.orderItems.clear();
+                        if (data.orderItems) await db.orderItems.bulkAdd(data.orderItems);
+                    });
+                    alert("Database restored successfully!");
+                    window.location.reload();
+                }
+            } catch (err) {
+                alert("Invalid backup file.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
     return (
-        <div>
+        <div className="pb-16">
             <h1 className="text-2xl font-bold mb-6">Reports & Settings</h1>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
@@ -58,11 +88,16 @@ export default function Reports() {
 
             <div className="card p-4 mb-4">
                 <h2 className="text-lg font-bold mb-2">Backup & Restore</h2>
-                <p className="text-sm text-gray-400 mb-4">Export your offline database securely to a JSON file format. Keep this valid to not lose any customers or orders.</p>
-                <div className="flex gap-4">
+                <p className="text-sm text-gray-400 mb-4">Export your offline database securely to a JSON file format. Restore from backup below.</p>
+                <div className="flex flex-col gap-4">
                     <button onClick={handleBackup} className="btn-primary w-full bg-[#1A1A1A] border border-[#10b981] text-[#10b981]">
                         📥 Export Backup
                     </button>
+
+                    <label className="btn-primary w-full bg-[#1A1A1A] border border-blue-500 text-blue-500 cursor-pointer flex justify-center items-center">
+                        <input type="file" accept=".json" className="hidden" onChange={handleRestore} />
+                        📤 Restore Database
+                    </label>
                 </div>
             </div>
         </div>

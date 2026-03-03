@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useNavigate, useParams } from 'react-router-dom';
 
+
 export default function CustomerDetail() {
     const { customerId } = useParams();
     const navigate = useNavigate();
@@ -12,10 +13,10 @@ export default function CustomerDetail() {
         [customerId]
     );
 
-    if (!customer) return <div>Loading...</div>;
+    if (!customer) return <div className="p-8 text-center text-red-500 font-bold">Customer Loading / Not Found...</div>;
 
     return (
-        <div>
+        <div className="pb-12">
             <div className="flex justify-between items-center mb-6">
                 <div className="flex gap-4 items-center">
                     <button className="text-gray-400 text-xl" onClick={() => navigate(-1)}>←</button>
@@ -25,12 +26,19 @@ export default function CustomerDetail() {
 
             <div className="card p-4 space-y-2 mb-6 text-gray-300">
                 <p><span className="text-gray-500">Phone:</span> {customer.phone}</p>
+                {customer.houseNumber && <p><span className="text-gray-500">House No:</span> {customer.houseNumber}</p>}
                 {customer.address && <p><span className="text-gray-500">Address:</span> {customer.address}</p>}
+                {customer.notes && <p><span className="text-gray-500">Notes:</span> {customer.notes}</p>}
+                {customer.locationLink && (
+                    <a href={customer.locationLink} target="_blank" rel="noreferrer" className="text-blue-500 underline inline-block mt-2">
+                        View on Google Maps
+                    </a>
+                )}
             </div>
 
             <button
                 onClick={() => navigate(`/customers/${customer.id}/order`)}
-                className="btn-primary w-full mb-8 py-4 text-lg"
+                className="btn-primary w-full mb-8 py-4 text-lg shadow-[0_0_15px_rgba(16,185,129,0.5)]"
             >
                 + Create Order
             </button>
@@ -41,7 +49,7 @@ export default function CustomerDetail() {
                     <div key={order.id} className="card p-4">
                         <div className="flex justify-between text-sm text-gray-400 mb-2">
                             <span>{new Date(order.dateTime).toLocaleString()}</span>
-                            <span className={order.status === 'Delivered' ? 'text-green-500' : 'text-yellow-500'}>
+                            <span className={order.status === 'Delivered' ? 'text-green-500' : order.status === 'Pending' ? 'text-yellow-500' : 'text-red-500'}>
                                 {order.status}
                             </span>
                         </div>
