@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 import Swal from 'sweetalert2';
 
-export const generatePDFAndShare = async (orderItems: any[], orderId: number, orderTotal: number, customerName: string, customerPhone: string = '', areaName: string = '', totalMrp: number, discNum: number) => {
+export const generatePDFAndShare = async (orderItems: any[], orderId: number, orderTotal: number, customerName: string, customerPhone: string = '', areaName: string = '', totalMrp: number, discNum: number, customerAddress: string = '', customerLocationLink: string = '') => {
     const doc = new jsPDF();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
@@ -42,52 +42,71 @@ export const generatePDFAndShare = async (orderItems: any[], orderId: number, or
     doc.setFontSize(14);
     doc.text(`FINAL AMOUNT: Rs ${orderTotal.toFixed(2)}`, 130, finalY + 45);
 
-    const pdfBlob = doc.output('blob');
+
     const fileName = `Invoice_${customerName}_${orderId}.pdf`;
 
-    const result = await Swal.fire({
-        title: 'Share Invoice',
-        text: 'Choose how you want to send this invoice',
-        icon: 'question',
-        showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonText: 'WhatsApp',
-        denyButtonText: 'Telegram',
-        cancelButtonText: 'Download Only',
-        background: '#222',
-        color: '#fff',
-        confirmButtonColor: '#25D366',
-        denyButtonColor: '#0088cc'
+    const choice = await new Promise((resolve) => {
+        Swal.fire({
+            title: 'Share Invoice',
+            html: `
+                <div class="flex flex-col gap-3 mt-4">
+                    <button id="btn-wa" class="btn-primary w-full bg-[#25D366] text-white border-none py-3 flex items-center justify-center font-bold">WhatsApp Direct</button>
+                    <button id="btn-group" class="btn-primary w-full bg-[#128C7E] text-white border-none py-3 flex items-center justify-center font-bold">WhatsApp Group + Link</button>
+                    <button id="btn-tg" class="btn-primary w-full bg-[#0088cc] text-white border-none py-3 flex items-center justify-center font-bold">Telegram Share</button>
+                    <button id="btn-dl" class="btn-primary w-full bg-[#333] text-white border-none py-3 flex items-center justify-center font-bold">Download PDF Only</button>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Cancel',
+            background: '#222',
+            color: '#fff',
+            didOpen: () => {
+                document.getElementById('btn-wa')?.addEventListener('click', () => { Swal.close(); resolve('wa'); });
+                document.getElementById('btn-group')?.addEventListener('click', () => { Swal.close(); resolve('group'); });
+                document.getElementById('btn-tg')?.addEventListener('click', () => { Swal.close(); resolve('tg'); });
+                document.getElementById('btn-dl')?.addEventListener('click', () => { Swal.close(); resolve('dl'); });
+            }
+        }).then((res) => {
+            if (res.isDismissed) resolve(null);
+        });
     });
 
-    if (result.isConfirmed) {
-        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                title: 'Apli Bhaji Invoice',
-                text: `Hello ${customerName}, here is your latest invoice from APLI BHAJI. Total: Rs ${orderTotal.toFixed(2)}.`,
-                files: [file]
-            });
-        } else {
-            doc.save(fileName);
-            const phoneStr = customerPhone?.replace(/\D/g, '');
-            const waLink = `https://wa.me/${phoneStr}?text=${encodeURIComponent(`Hello ${customerName}, your order total is Rs ${orderTotal.toFixed(2)}. I have sent the invoice PDF here.`)}`;
-            setTimeout(() => window.open(waLink, '_blank'), 1000);
-        }
-    } else if (result.isDenied) {
-        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                title: 'Apli Bhaji Invoice',
-                text: `Hello ${customerName}, here is your latest invoice from APLI BHAJI. Total: Rs ${orderTotal.toFixed(2)}.`,
-                files: [file]
-            });
-        } else {
-            doc.save(fileName);
-            const tgLink = `https://t.me/share/url?url=${encodeURIComponent('Please check the downloaded PDF.')}&text=${encodeURIComponent(`Hello ${customerName}, your order total is Rs ${orderTotal.toFixed(2)}.`)}`;
-            setTimeout(() => window.open(tgLink, '_blank'), 1000);
-        }
-    } else {
+    if (!choice) return;
+
+    // Generate Text Invoice Data
+    let textInvoice = `*APLI BHAJI*\n`;
+    textInvoice += `*Customer:* ${customerName}\n`;
+    if (customerAddress) textInvoice += `*Address:* ${customerAddress}\n`;
+    if (customerLocationLink) textInvoice += `*Location:* ${customerLocationLink}\n`;
+    textInvoice += `\n*Items:*\n`;
+
+    orderItems.forEach((item, i) => {
+        textInvoice += `${i + 1}. ${item.name} (${item.quantity} ${item.unit}) - Rs ${item.total.toFixed(2)}\n`;
+    });
+    if (totalMrp > 0) textInvoice += `\n*Total MRP:* Rs ${totalMrp.toFixed(2)}`;
+    if (discNum > 0) textInvoice += `\n*Discount:* - Rs ${discNum.toFixed(2)}`;
+    textInvoice += `\n*FINAL AMOUNT: Rs ${orderTotal.toFixed(2)}*\n\n`;
+
+    const groupLink = `https://chat.whatsapp.com/DAaIl8d4ObQ2UyBi64Q4qz?mode=gi_t`;
+    const phoneStr = customerPhone?.replace(/\D/g, '') || '';
+    let waPhoneStr = phoneStr;
+    if (waPhoneStr.length === 10) waPhoneStr = '91' + waPhoneStr;
+
+    if (choice === 'wa') {
+        // WhatsApp Text Only
+        const waLink = `https://wa.me/${waPhoneStr}?text=${encodeURIComponent(textInvoice)}`;
+        window.open(waLink, '_blank');
+    } else if (choice === 'group') {
+        // WhatsApp Text + Group Link
+        const textWithGroup = textInvoice + `*Join our WhatsApp Group:*\n${groupLink}`;
+        const waLink = `https://wa.me/${waPhoneStr}?text=${encodeURIComponent(textWithGroup)}`;
+        window.open(waLink, '_blank');
+    } else if (choice === 'tg') {
+        // Telegram text rendering
+        const tgLink = `https://t.me/share/url?url=${encodeURIComponent(groupLink)}&text=${encodeURIComponent(textInvoice)}`;
+        window.open(tgLink, '_blank');
+    } else if (choice === 'dl') {
         doc.save(fileName);
     }
 };

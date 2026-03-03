@@ -103,7 +103,7 @@ export default function CreateOrder() {
 
         Swal.fire({ title: 'Success', text: 'Order saved successfully!', icon: 'success', background: '#222', color: '#fff', timer: 1500, showConfirmButton: false });
 
-        await generatePDFAndShare(finalOrderItemsList, finalOrderId, finalAmount, customer?.name || "Unknown", customer?.phone, area?.name, totalMrp, discNum);
+        await generatePDFAndShare(finalOrderItemsList, finalOrderId, finalAmount, customer?.name || "Unknown", customer?.phone, area?.name, totalMrp, discNum, customer?.address, customer?.locationLink);
 
         navigate(-1);
     };

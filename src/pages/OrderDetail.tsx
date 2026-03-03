@@ -37,7 +37,9 @@ export default function OrderDetail() {
             customer.phone,
             area?.name,
             order.totalAmount, // Assuming totalMrp here is not saved, we pass totalAmount as MRP proxy if needed
-            order.discount
+            order.discount,
+            customer.address,
+            customer.locationLink
         );
     };
 
